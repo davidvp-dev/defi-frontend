@@ -8,7 +8,7 @@ import {
   injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { http } from 'wagmi';
-import { defineChain } from 'viem';
+import { defineChain, type Chain } from 'viem';
 import { arbitrum } from 'wagmi/chains';
 
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? '';
@@ -25,11 +25,17 @@ export const arbitrumFork = defineChain({
   testnet: true,
 });
 
+// En local se incluye el fork; en el despliegue público (Vercel) se desactiva con
+// VITE_ENABLE_LOCAL_FORK=false, porque 127.0.0.1 apuntaría al ordenador de cada visitante.
+export const localForkEnabled = import.meta.env.VITE_ENABLE_LOCAL_FORK !== 'false';
+
+const chains = (localForkEnabled ? [arbitrumFork, arbitrum] : [arbitrum]) as [Chain, ...Chain[]];
+
 export const config = getDefaultConfig({
   appName: 'CustomDEX',
   projectId: walletConnectProjectId,
-  // El fork local va primero: es la red por defecto mientras no haya despliegue en mainnet
-  chains: [arbitrumFork, arbitrum],
+  // El fork local va primero (si está activo): es la red por defecto en desarrollo
+  chains,
   transports: {
     [arbitrumFork.id]: http(localRpcUrl),
     [arbitrum.id]: http(),
