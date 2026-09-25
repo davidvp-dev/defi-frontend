@@ -1,0 +1,81 @@
+# CI/CD for the CustomDEX frontend
+#
+#  - Every push and every PR to main: install + type-check + build (CI).
+#  - Push to main:            deploy to Vercel PRODUCTION.
+#  - Push to any other branch: deploy a Vercel PREVIEW (unique URL per commit).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN       → https://vercel.com/account/tokens
+#   VERCEL_ORG_ID      → .vercel/project.json after running `vercel link`
+#   VERCEL_PROJECT_ID  → .vercel/project.json after running `vercel link`
+#
+# App config (VITE_* variables) lives in Vercel: Project → Settings → Environment Variables.
+# `vercel pull` downloads them before the build, so no addresses are hardcoded here.
+
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Type-check & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check and build
+        run: npm run build
+
+  deploy:
+    name: Deploy to Vercel (${{ github.ref_name == 'main' && 'production' || 'preview' }})
+    needs: check
+    # Only deploy on pushes (not on PRs) from this repository
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      PROD_FLAG: ${{ github.ref_name == 'main' && '--prod' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel project settings and env vars
+        run: vercel pull --yes --environment=$VERCEL_ENV --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build $PROD_FLAG --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy prebuilt output
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt $PROD_FLAG --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Deployed to $VERCEL_ENV: $url" >> "$GITHUB_STEP_SUMMARY"
