@@ -1,79 +1,134 @@
 # CustomDEX — Frontend
 
-Frontend en React (Vite) para interactuar con `CustomDEX.sol` (proyecto Foundry
-`UniswapDEX`): swaps de tokens y añadir/retirar liquidez en Uniswap V2 a través
-del contrato wrapper.
+React (Vite) frontend for [`CustomDEX.sol`](https://github.com/davidvp-dev/custom-dex-collections)
+(Foundry project `UniswapDEX`): swap tokens and add/remove liquidity on Uniswap V2
+through the wrapper contract.
 
-Stack: React + Vite + wagmi + viem + RainbowKit (mismo que `cryptobank-frontend`).
+Stack: React + Vite + TypeScript + wagmi + viem + RainbowKit + React Query.
 
-## 1. Levantar el nodo local (fork de Arbitrum)
+## Features
 
-Desde el proyecto Foundry:
+- **Swap** between USDC, ARB and WETH with live quotes (`getAmountsOut`), direct
+  pair or routing through WETH, configurable slippage and price impact.
+- **Liquidity**: pool info (reserves, your LP tokens and pool share), add
+  liquidity (the second amount is computed from the reserves) and remove
+  liquidity (25 / 50 / 75 % / MAX).
+- **Approvals**: the approve button only appears when the allowance is not
+  enough, and it approves the exact amount (never infinite).
+- **Wallet**: ETH and token balances, refreshed automatically after every
+  confirmed transaction.
+
+## 1. Start the local node (Arbitrum fork)
+
+From the Foundry project:
 
 ```bash
 cd "../3. Proyectos Intermedios II/UniswapDEX"
-./scripts/bootstrap-local.sh   # anvil --chain-id 1337 + deploy + fondea TARGET_WALLET (1 ETH, 100 USDC, 50 ARB)
+./scripts/bootstrap-local.sh   # anvil --chain-id 1337 + deploy + funds TARGET_WALLET (1 ETH, 100 USDC, 50 ARB)
 ```
 
-La dirección de `CustomDEX` sale en
-`broadcast/DeployCustomDEX.s.sol/1337/run-latest.json`. Con el mismo deployer y
-un anvil recién arrancado suele ser la misma, pero si cambia actualiza
+The `CustomDEX` address is in
+`broadcast/DeployCustomDEX.s.sol/1337/run-latest.json`. With the same deployer
+and a freshly started anvil it is usually the same, but if it changes, update
 `.env.local`.
 
-## 2. Instalar y configurar
+## 2. Install and configure
 
 ```bash
 npm install
-cp .env.local.example .env.local   # ya viene uno relleno para el fork local
+cp .env.local.example .env.local
 ```
 
-- `VITE_CONTRACT_ADDRESS_LOCAL`: dirección de CustomDEX en el fork
-- `VITE_LOCAL_CHAIN_ID`: 1337 (lo que usa `bootstrap-local.sh`)
-- `VITE_CONTRACT_ADDRESS_ARBITRUM`: vacío hasta que despliegues en mainnet
+| Variable | Description |
+|---|---|
+| `VITE_WALLETCONNECT_PROJECT_ID` | Free at https://cloud.walletconnect.com |
+| `VITE_ENABLE_LOCAL_FORK` | `true` locally; `false` in the public deployment |
+| `VITE_LOCAL_RPC_URL` | Local node RPC (default `http://127.0.0.1:8545`) |
+| `VITE_LOCAL_CHAIN_ID` | `1337` (what `bootstrap-local.sh` uses) |
+| `VITE_CONTRACT_ADDRESS_LOCAL` | CustomDEX address on the fork |
+| `VITE_CONTRACT_ADDRESS_ARBITRUM` | CustomDEX address on Arbitrum One (empty until deployed) |
 
-## 3. Ejecutar
+## 3. Run
 
 ```bash
 npm run dev
 ```
 
-En MetaMask/Rabby añade la red **Arbitrum Fork (local)**: RPC
-`http://127.0.0.1:8545`, chain id `1337`, símbolo `ETH` (RainbowKit te ofrece
-cambiar a ella al conectar).
+In MetaMask/Rabby add the **Arbitrum Fork (local)** network: RPC
+`http://127.0.0.1:8545`, chain id `1337`, symbol `ETH` (RainbowKit offers to
+switch to it when you connect).
 
-> Tras reiniciar anvil, MetaMask puede quedarse con nonces antiguos:
-> Ajustes → Avanzado → *Clear activity tab data*.
+> After restarting anvil, MetaMask may keep old nonces:
+> Settings → Advanced → *Clear activity tab data*.
 
-## Cómo funciona
+## How it works
 
-- `src/abi/CustomDEX.ts` — ABI sacado de `out/CustomDEX.sol/CustomDEX.json`,
-  exportado `as const` para que wagmi tipe args y retornos
-- `src/abi/uniswapV2.ts` — ABIs mínimos de lectura: `router.getAmountsOut`,
+- `src/abi/CustomDEX.ts` — ABI taken from `out/CustomDEX.sol/CustomDEX.json`,
+  exported `as const` so wagmi can type arguments and return values
+- `src/abi/uniswapV2.ts` — minimal read-only ABIs: `router.getAmountsOut`,
   `factory.getPair`, `pair.getReserves/token0/totalSupply/balanceOf`
-- `src/config/tokens.ts` — USDC, ARB y WETH de Arbitrum One (mismas
-  direcciones en el fork)
-- `src/hooks/useDex.ts` — lee `UNISWAP_V2_ROUTER_ADDRESS` y
-  `UNISWAP_V2_FACTORY_ADDRESS` del propio contrato (nada hardcodeado)
-- `src/hooks/usePair.ts` — resuelve el par y devuelve reservas ordenadas A/B,
-  totalSupply de LP y tus LP tokens
-- `src/hooks/useTx.ts` — `useWriteContract` + `useWaitForTransactionReceipt`
-  e invalida la caché al confirmar, así todo se refresca solo
-- `src/components/ApproveButton.tsx` — CustomDEX hace `transferFrom`, así que
-  cada operación necesita allowance; el botón solo aparece si falta y aprueba
-  el importe exacto
-- `src/components/SwapPanel.tsx` — cotiza con `getAmountsOut`, usa par directo
-  o ruta vía WETH si no existe, aplica slippage a `amountOutMin` y llama
+- `src/config/wagmi.ts` — networks (local fork + Arbitrum One) and wallets
+- `src/config/contract.ts` — CustomDEX address for each network
+- `src/config/tokens.ts` — USDC, ARB and WETH on Arbitrum One (same addresses
+  on the fork)
+- `src/hooks/useDex.ts` — reads `UNISWAP_V2_ROUTER_ADDRESS` and
+  `UNISWAP_V2_FACTORY_ADDRESS` from the contract itself (nothing hardcoded)
+- `src/hooks/usePair.ts` — resolves the pair and returns reserves ordered as
+  A/B, LP total supply and your LP tokens
+- `src/hooks/useTx.ts` — `useWriteContract` + `useWaitForTransactionReceipt`;
+  invalidates the cache on confirmation so everything refreshes by itself
+- `src/components/ApproveButton.tsx` — CustomDEX calls `transferFrom`, so every
+  operation needs an allowance; the button only shows up when it is missing and
+  approves the exact amount
+- `src/components/SwapPanel.tsx` — quotes with `getAmountsOut`, uses the direct
+  pair or routes through WETH, applies slippage to `amountOutMin` and calls
   `swapTokens(amountIn, amountOutMin, path, deadline)`
-- `src/components/AddLiquidity.tsx` — calcula el segundo importe con las
-  reservas del pool y llama `addLiquidity(...)` con mínimos según slippage
-- `src/components/RemoveLiquidity.tsx` — aprueba el LP token al DEX, estima lo
-  que recibes (`liquidity * reserva / totalSupply`) y llama `removeLiquidity(...)`
-- `src/App.tsx` — wallet, resolución de dirección por red, comprobación de que
-  hay bytecode en la dirección (útil si reinicias anvil), pestañas y slippage
+- `src/components/AddLiquidity.tsx` — computes the second amount from the pool
+  reserves and calls `addLiquidity(...)` with slippage-based minimums
+- `src/components/RemoveLiquidity.tsx` — approves the LP token to the DEX,
+  estimates what you get back (`liquidity * reserve / totalSupply`) and calls
+  `removeLiquidity(...)`
+- `src/App.tsx` — wallet, contract address per network, bytecode check at that
+  address (useful after restarting anvil), tabs and slippage
 
-## Flujo típico en el fork
+## Typical flow on the fork
 
-1. Swap 10 USDC → ARB: *Aprobar USDC* → `swapTokens()`
-2. Liquidez USDC/ARB: escribe USDC, el ARB se calcula solo → aprobar ambos →
-   `addLiquidity()`
-3. Retirar: MAX → *Aprobar LP* → `removeLiquidity()`
+1. Swap 10 USDC → ARB: *Approve USDC* → `swapTokens()`
+2. USDC/ARB liquidity: type the USDC amount, the ARB amount is computed →
+   approve both → `addLiquidity()`
+3. Remove: MAX → *Approve LP* → `removeLiquidity()`
+
+## CI/CD and deployment (GitHub Actions + Vercel)
+
+The workflow in `.github/workflows/ci-cd.yml`:
+
+| Event | What happens |
+|---|---|
+| Push to any branch / PR to `main` | `npm ci` + type-check + build |
+| Push to `main` | Deploy to Vercel **production** |
+| Push to any other branch | Deploy a Vercel **preview** (unique URL) |
+
+`vercel.json` disables Vercel's own Git integration so that only GitHub
+Actions deploys (no duplicated deployments).
+
+### One-time setup
+
+1. Create a Vercel account (log in with GitHub) and install the CLI:
+   `npm i -g vercel`.
+2. In this folder run `vercel link` and create a new project. It generates
+   `.vercel/project.json` with `orgId` and `projectId` (git-ignored).
+3. Create a token at https://vercel.com/account/tokens.
+4. In GitHub → *Settings → Secrets and variables → Actions*, add
+   `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`.
+5. In Vercel → *Project → Settings → Environment Variables*, add the `VITE_*`
+   variables for **Production** and **Preview** (with
+   `VITE_ENABLE_LOCAL_FORK=false`).
+
+> ⚠️ A public deployment cannot reach your local anvil: `127.0.0.1` points to
+> each visitor's own machine. For other people to use the dApp, CustomDEX has to
+> be deployed on a public network (e.g. Arbitrum One) and its address set in
+> `VITE_CONTRACT_ADDRESS_ARBITRUM`.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
