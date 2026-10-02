@@ -5,6 +5,23 @@ export type Token = {
   name: string;
   address: Address;
   decimals: number;
+  /** true solo para ETH nativo (no es un contrato ERC20). */
+  isNative?: boolean;
+};
+
+/**
+ * ETH nativo no tiene dirección de contrato. Se usa esta dirección "ficticia" (convención de
+ * muchos DEX) solo como identificador dentro del frontend; nunca se envía a un contrato.
+ * Para el router, ETH se representa con WETH en el `path`.
+ */
+export const NATIVE_ADDRESS: Address = '0xEeeeeEeeeEeEeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
+export const ETH: Token = {
+  symbol: 'ETH',
+  name: 'Ether',
+  address: NATIVE_ADDRESS,
+  decimals: 18,
+  isNative: true,
 };
 
 // Tokens de Arbitrum One. Como el nodo local es un fork, las direcciones son las mismas.
@@ -29,8 +46,21 @@ export const ARB: Token = {
   decimals: 18,
 };
 
+/** Tokens ERC20 (liquidez, balances, aprobaciones). */
 export const TOKENS: Token[] = [USDC, ARB, WETH];
 
+/** Tokens disponibles en el swap: ETH nativo + ERC20. */
+export const SWAP_TOKENS: Token[] = [ETH, ...TOKENS];
+
+export function isNative(address: Address): boolean {
+  return address.toLowerCase() === NATIVE_ADDRESS.toLowerCase();
+}
+
+/** Dirección que entiende el router: ETH nativo → WETH. */
+export function toRouterAddress(address: Address): Address {
+  return isNative(address) ? WETH.address : address;
+}
+
 export function findToken(address: Address): Token {
-  return TOKENS.find((t) => t.address.toLowerCase() === address.toLowerCase())!;
+  return SWAP_TOKENS.find((t) => t.address.toLowerCase() === address.toLowerCase())!;
 }
