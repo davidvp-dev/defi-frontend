@@ -1,8 +1,7 @@
-import { erc20Abi, type Address } from 'viem';
-import { useAccount, useReadContract } from 'wagmi';
-import { TOKENS, findToken } from '../config/tokens';
+import { erc20Abi, formatUnits, parseEther, type Address } from 'viem';
+import { useAccount, useBalance, useReadContract } from 'wagmi';
+import { TOKENS, findToken, isNative, type Token } from '../config/tokens';
 import { fmt } from '../lib/format';
-import { formatUnits } from 'viem';
 
 type Props = {
   label: string;
@@ -13,24 +12,56 @@ type Props = {
   readOnly?: boolean;
   /** Oculta este token del selector (p. ej. el otro lado del par). */
   exclude?: Address;
+  /** Tokens que ofrece el selector (por defecto solo ERC20). */
+  tokens?: Token[];
 };
 
+// Al pulsar MAX con ETH nativo se deja algo para pagar el gas de la transacción.
+const GAS_RESERVE = parseEther('0.0005');
+
+/**
+ * Balance del usuario: ETH nativo con useBalance, ERC20 con balanceOf.
+ * Los dos hooks se llaman siempre (regla de los hooks) y se activa solo el que toca.
+ */
 export function useTokenBalance(token: Address) {
   const { address } = useAccount();
-  const { data } = useReadContract({
+  const native = isNative(token);
+
+  const { data: ethBalance } = useBalance({
+    address,
+    query: { enabled: Boolean(address) && native },
+  });
+
+  const { data: erc20Balance } = useReadContract({
     address: token,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [address!],
-    query: { enabled: Boolean(address) },
+    query: { enabled: Boolean(address) && !native },
   });
-  return data;
+
+  return native ? ethBalance?.value : erc20Balance;
 }
 
 /** Caja de importe + selector de token + balance del usuario con botón MAX. */
-export function TokenInput({ label, token, onTokenChange, amount, onAmountChange, readOnly, exclude }: Props) {
+export function TokenInput({
+  label,
+  token,
+  onTokenChange,
+  amount,
+  onAmountChange,
+  readOnly,
+  exclude,
+  tokens = TOKENS,
+}: Props) {
   const info = findToken(token);
   const balance = useTokenBalance(token);
+
+  const setMax = () => {
+    if (balance === undefined || !onAmountChange) return;
+    const max = info.isNative ? (balance > GAS_RESERVE ? balance - GAS_RESERVE : 0n) : balance;
+    onAmountChange(formatUnits(max, info.decimals));
+  };
 
   return (
     <div className="token-box">
@@ -39,11 +70,7 @@ export function TokenInput({ label, token, onTokenChange, amount, onAmountChange
         <span className="label">
           Balance: <span className="value">{fmt(balance, info.decimals)}</span>
           {!readOnly && onAmountChange && balance !== undefined && balance > 0n && (
-            <button
-              type="button"
-              className="link"
-              onClick={() => onAmountChange(formatUnits(balance, info.decimals))}
-            >
+            <button type="button" className="link" onClick={setMax}>
               MAX
             </button>
           )}
@@ -64,7 +91,7 @@ export function TokenInput({ label, token, onTokenChange, amount, onAmountChange
           disabled={!onTokenChange}
           onChange={(e) => onTokenChange?.(e.target.value as Address)}
         >
-          {TOKENS.filter((t) => t.address !== exclude).map((t) => (
+          {tokens.filter((t) => t.address !== exclude).map((t) => (
             <option key={t.address} value={t.address}>
               {t.symbol}
             </option>

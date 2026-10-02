@@ -6,6 +6,7 @@ import { useDex } from './hooks/useDex';
 import { SwapPanel } from './components/SwapPanel';
 import { LiquidityPanel } from './components/LiquidityPanel';
 import { WalletPanel } from './components/WalletPanel';
+import { AdminPanel } from './components/AdminPanel';
 import type { Address } from 'viem';
 
 type Tab = 'swap' | 'liquidity';
@@ -19,7 +20,7 @@ export default function App() {
     <main className="container">
       <div className="topbar">
         <div className="brand">
-          <span className="brand-dot" />
+          <img className="brand-logo" src="/logo.svg" alt="" width={28} height={28} />
           CustomDEX
         </div>
         <ConnectButton showBalance={false} />
@@ -102,6 +103,9 @@ function Dex({ contractAddress }: { contractAddress: Address }) {
       ) : (
         <LiquidityPanel contractAddress={contractAddress} factory={factory} slippageBps={slippageBps} />
       )}
+
+      {/* Solo se pinta si la wallet conectada es owner() o pendingOwner() del contrato */}
+      <AdminPanel contractAddress={contractAddress} />
     </>
   );
 }

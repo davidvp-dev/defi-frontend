@@ -1,3 +1,5 @@
+<p align="center"><img src="./public/logo-wordmark.svg" alt="CustomDEX" width="320" /></p>
+
 # CustomDEX — Frontend
 
 React (Vite) frontend for [`CustomDEX.sol`](https://github.com/davidvp-dev/custom-dex-collections)
@@ -8,8 +10,17 @@ Stack: React + Vite + TypeScript + wagmi + viem + RainbowKit + React Query.
 
 ## Features
 
-- **Swap** between USDC, ARB and WETH with live quotes (`getAmountsOut`), direct
-  pair or routing through WETH, configurable slippage and price impact.
+- **Swap** between native ETH, USDC, ARB and WETH with live quotes
+  (`getAmountsOut`), direct pair or routing through WETH, configurable slippage
+  and price impact. The right contract function is picked automatically:
+  `swapTokens` (ERC20 → ERC20), `swapEthForERC20Tokens` (ETH → ERC20, no
+  approval needed) or `swapERC20TokensForEth` (ERC20 → ETH).
+- **Protocol fee**: quotes show the amount you receive net of the CustomDEX fee
+  (`feeBps`, read on-chain).
+- **Admin panel** (only visible to `owner()` / `pendingOwner()`): update the fee
+  (`setFeeBps`, capped at `MAX_FEE_BPS`), the fee recipient
+  (`setFeeRecipient`) and transfer ownership in two steps
+  (`transferOwnership` → `acceptOwnership`).
 - **Liquidity**: pool info (reserves, your LP tokens and pool share), add
   liquidity (the second amount is computed from the reserves) and remove
   liquidity (25 / 50 / 75 % / MAX).
@@ -69,8 +80,12 @@ switch to it when you connect).
   `factory.getPair`, `pair.getReserves/token0/totalSupply/balanceOf`
 - `src/config/wagmi.ts` — networks (local fork + Arbitrum One) and wallets
 - `src/config/contract.ts` — CustomDEX address for each network
-- `src/config/tokens.ts` — USDC, ARB and WETH on Arbitrum One (same addresses
-  on the fork)
+- `src/config/tokens.ts` — native ETH (placeholder address
+  `0xEeee…EEeE`, mapped to WETH in router paths) plus USDC, ARB and WETH on
+  Arbitrum One (same addresses on the fork)
+- `src/hooks/useProtocol.ts` — reads `feeBps`, `MAX_FEE_BPS`, `feeRecipient`,
+  `owner` and `pendingOwner` in a single multicall
+- `src/components/AdminPanel.tsx` — owner-only fee and ownership management
 - `src/hooks/useDex.ts` — reads `UNISWAP_V2_ROUTER_ADDRESS` and
   `UNISWAP_V2_FACTORY_ADDRESS` from the contract itself (nothing hardcoded)
 - `src/hooks/usePair.ts` — resolves the pair and returns reserves ordered as

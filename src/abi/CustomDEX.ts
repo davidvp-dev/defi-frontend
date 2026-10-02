@@ -1,7 +1,7 @@
 // ABI generado por Foundry: UniswapDEX/out/CustomDEX.sol/CustomDEX.json
 // Se exporta "as const" para que wagmi/viem infieran los tipos de args y retornos.
-export const customDexAbi = 
-[
+// Tras cambiar el contrato: `forge build` y vuelve a copiar el array "abi" aquí.
+export const customDexAbi = [
   {
     "type": "constructor",
     "inputs": [
@@ -14,9 +14,31 @@ export const customDexAbi =
         "name": "uniswapV2FactoryAddress_",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "feeRecipient_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "receive",
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "MAX_FEE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -43,6 +65,13 @@ export const customDexAbi =
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "acceptOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -95,6 +124,58 @@ export const customDexAbi =
   },
   {
     "type": "function",
+    "name": "feeBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "feeRecipient",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "removeLiquidity",
     "inputs": [
       {
@@ -144,6 +225,102 @@ export const customDexAbi =
   },
   {
     "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setFeeBps",
+    "inputs": [
+      {
+        "name": "newFeeBps_",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setFeeRecipient",
+    "inputs": [
+      {
+        "name": "newRecipient_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "swapERC20TokensForEth",
+    "inputs": [
+      {
+        "name": "amountIn_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "amountOutMin_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "path_",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "deadline_",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "amounts",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "swapEthForERC20Tokens",
+    "inputs": [
+      {
+        "name": "amountOutMin_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "path_",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "deadline_",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "amounts",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
     "name": "swapTokens",
     "inputs": [
       {
@@ -169,11 +346,24 @@ export const customDexAbi =
     ],
     "outputs": [
       {
-        "name": "amountsOut",
+        "name": "amounts",
         "type": "uint256[]",
         "internalType": "uint256[]"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -193,7 +383,7 @@ export const customDexAbi =
         "internalType": "address"
       },
       {
-        "name": "lpTokensAmount",
+        "name": "lpTokensAmount_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -203,34 +393,110 @@ export const customDexAbi =
   },
   {
     "type": "event",
+    "name": "FeeBpsUpdated",
+    "inputs": [
+      {
+        "name": "oldFeeBps",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newFeeBps",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeRecipientUpdated",
+    "inputs": [
+      {
+        "name": "oldRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferStarted",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "RemoveLPTokens",
     "inputs": [
       {
-        "name": "tokenA",
+        "name": "tokenA_",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "tokenB",
+        "name": "tokenB_",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "liquidity",
+        "name": "liquidity_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "amountA",
+        "name": "amountA_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "amountB",
+        "name": "amountB_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -243,31 +509,64 @@ export const customDexAbi =
     "name": "SwapTokens",
     "inputs": [
       {
-        "name": "tokenIn",
+        "name": "tokenIn_",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "tokenOut",
+        "name": "tokenOut_",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "amountIn",
+        "name": "amountIn_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "amountOut",
+        "name": "amountOut_",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "protocolFee_",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
   },
   {
     "type": "error",
